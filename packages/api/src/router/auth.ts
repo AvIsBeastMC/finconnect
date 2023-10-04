@@ -1,11 +1,56 @@
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+import { z } from 'zod';
 
 export const authRouter = createTRPCRouter({
-  getSession: publicProcedure.query(({ ctx }) => {
-    return ctx.session;
+  login: publicProcedure.input(z.object({
+    email: z.string(),
+    password: z.string(),
+  })).mutation(async ({ ctx, input }) => {
+    const { prisma } = ctx;
+    const { email, password } = input;
+
+    const query = await prisma.account.findFirst({
+      where: {
+        email,
+        password
+      }
+    })
+
+    if (!query) throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Bad Credentials!"
+    })
+
+    return query;
   }),
-  getSecretMessage: protectedProcedure.query(() => {
-    // testing type validation of overridden next-auth Session in @acme/auth package
-    return "you can see this secret message!";
+  register: publicProcedure.input(z.object({
+    email: z.string(),
+    password: z.string(),
+    name: z.string(),
+  })).mutation(async ({ ctx, input }) => {
+    const { prisma } = ctx;
+    const { email, password, name } = input;
+
+    const query = await prisma.account.findUnique({
+      where: {
+        email
+      }
+    })
+
+    if (query) throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Account with this email address already exists!"
+    })
+
+    const register = await prisma.account.create({
+      data: {
+        email,
+        name,
+        password
+      }
+    });
+
+    return register;
   }),
 });

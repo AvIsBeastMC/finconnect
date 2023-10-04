@@ -1,29 +1,109 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import React from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { Stack } from "expo-router";
+import { Tabs } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-
+import { Box, NativeBaseProvider } from "native-base";
+import { Text } from "native-base";
 import { TRPCProvider } from "~/utils/api";
+import { BadgeInfo, BadgePlus, LayoutGrid, WalletCards } from 'lucide-react-native'
+import { atom, useAtom } from 'jotai'
+import type { Account } from "@prisma/client";
+import { useFonts } from "expo-font";
 
-// This is the main layout of the app
-// It wraps your pages with the providers they need
+type AuthState = Account;
+export const AuthState = atom<AuthState | undefined>(undefined)
+
 const RootLayout = () => {
+  const [auth, setAuth] = useAtom(AuthState);
+  const [fontsLoaded] = useFonts({
+    'Inter': require('../fonts/Inter.ttf'),
+    // Poppins
+    'Poppins': require('../fonts/Poppins-Regular.ttf'),
+    'PoppinsBold': require('../fonts/Poppins-Bold.ttf'),
+    'PoppinsSemiBold': require('../fonts/Poppins-SemiBold.ttf'),
+    // Product Sans
+    'ProductSans': require('../fonts/Product-Sans.ttf'),
+    'ProductSansBold': require('../fonts/Product-Sans-Bold.ttf'),
+  });
+
+  if (!fontsLoaded) return <></>;
+
   return (
     <TRPCProvider>
-      <SafeAreaProvider>
-        {/*
+      <NativeBaseProvider>
+        <SafeAreaProvider>
+          {/*
           The Stack component displays the current page.
           It also allows you to configure your screens 
         */}
-        <Stack
-          screenOptions={{
-            headerStyle: {
-              backgroundColor: "#f472b6",
-            },
-          }}
-        />
-        <StatusBar />
-      </SafeAreaProvider>
+          <Tabs>
+            <Tabs.Screen name="index"
+              options={{
+                title: 'Home',
+                headerTitle() {
+                  return (
+                    <Box className="flex flex-row">
+                      <LayoutGrid color="black" size={18} className="self-center" />
+
+                      <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">Home</Text>
+                    </Box>
+                  )
+                },
+                tabBarLabel: () => <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="-mt-2 mb-1 text-black text-xs">Home</Text>,
+                tabBarIcon: ({ focused }) => <LayoutGrid color={focused ? "black" : "gray"} size={20} className="" />,
+              }} />
+
+            <Tabs.Screen name="wallets/all"
+              options={{
+                title: 'All Wallets',
+                href: auth ? 'wallets/all' : null,
+                headerTitle() {
+                  return (
+                    <Box className="flex flex-row">
+                      <WalletCards color="black" size={18} className="self-center" />
+
+                      <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">All Wallets</Text>
+                    </Box>
+                  )
+                },
+                tabBarLabel: () => <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="-mt-2 mb-1 text-black text-xs">All Wallets</Text>,
+                tabBarIcon: ({ focused }) => <WalletCards color={focused ? "black" : "gray"} size={20} className="" />,
+              }} />
+
+            <Tabs.Screen name="wallets/create"
+              options={{
+                title: 'Create Wallet',
+                href: null,
+                headerTitle() {
+                  return (
+                    <Box className="flex flex-row">
+                      <BadgePlus color="black" size={18} className="self-center" />
+
+                      <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">Create Wallet</Text>
+                    </Box>
+                  )
+                },
+              }} />
+
+            <Tabs.Screen name="wallets/[id]/index"
+              options={{
+                title: 'Wallet Information',
+                href: null,
+                headerTitle() {
+                  return (
+                    <Box className="flex flex-row">
+                      <BadgeInfo color="black" size={18} className="self-center" />
+
+                      <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">Wallet Information</Text>
+                    </Box>
+                  )
+                },
+              }} />
+          </Tabs>
+          <StatusBar />
+        </SafeAreaProvider>
+      </NativeBaseProvider>
     </TRPCProvider>
   );
 };
