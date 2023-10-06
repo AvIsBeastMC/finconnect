@@ -62,6 +62,10 @@ export default function CreateWallet() {
           text2: `New Currency Wallet '${data!.currency}' added!`
         });
 
+        setCurrency(undefined);
+        setPin(undefined);
+        setMoneyToAdd(undefined);
+
         setTimeout(() => {
           router.push('wallets/all?toRefetch=true')
         }, 2000);

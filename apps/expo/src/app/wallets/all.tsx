@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
+
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useAtom } from 'jotai'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { api } from '~/utils/api'
 import { AuthState } from '../_layout'
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import { Container, ScrollView, Text } from 'native-base'
 import { RefreshControl, TouchableOpacity } from 'react-native'
 import { Asterisk, BadgePlus, LogOut } from 'lucide-react-native'
@@ -22,10 +23,14 @@ const AllWallets = () => {
   const { data, error, isLoading, refetch, isRefetching } = api.general.getWallets.useQuery({
     account: auth?.id ? auth.id : 'unauthed'
   })
+  const navigation = useNavigation()
 
   useEffect(() => {
     if (!auth) return router.push('/')
-    refetch()
+
+    navigation.addListener('state', (e) => {
+      refetch()
+    });
   }, [])
 
   if (!auth) return <></>

@@ -16,31 +16,34 @@ model Account {
   email           String           @unique
   password        String
   currencyWallets CurrencyWallet[]
+  defaultWallet   String?
 }
 
 model CurrencyWallet {
-  id           String        @id @default(cuid())
-  pin          Int
-  account      Account       @relation(references: [id], fields: [accountId])
-  currency     String        @default("USD")
-  balance      Float         @default(0)
-  transactions Transaction[]
-  deposits     Deposits[]
+  id                            String                 @id @default(cuid())
+  pin                           Int
+  account                       Account                @relation(references: [id], fields: [accountId])
+  currency                      String                 @default("USD")
+  balance                       Float                  @default(0)
+  transactions                  Transaction[]
+  deposits                      Deposit[]
+  internationalPaymentsSent     InternationalPayment[] @relation("sender")
+  internationalPaymentsReceived InternationalPayment[] @relation("receiver")
 
   accountId String
 }
 
 model Transaction {
-  id             String         @id @default(cuid())
-  currencyWallet CurrencyWallet @relation(references: [id], fields: [currencyWalletId])
-  target         String
-  amount         Float
-  time           DateTime       @default(now())
-
-  currencyWalletId String
+  id                   String                @id @default(cuid())
+  currencyWallet       CurrencyWallet        @relation(references: [id], fields: [currencyWalletId])
+  target               String
+  amount               Float
+  time                 DateTime              @default(now())
+  internationalPayment InternationalPayment?
+  currencyWalletId     String
 }
 
-model Deposits {
+model Deposit {
   id             String         @id @default(cuid())
   amount         Float
   source         String
@@ -48,4 +51,19 @@ model Deposits {
   time           DateTime       @default(now())
 
   currencyWalletId String
+}
+
+model InternationalPayment {
+  id                String         @id @default(cuid())
+  timeInitiated     DateTime       @default(now())
+  timeCompleted     DateTime?
+  amountInCurrency1 Float
+  exchangeRate1to2  Float
+  sender            CurrencyWallet @relation("sender", references: [id], fields: [sourceId])
+  receiver          CurrencyWallet @relation("receiver", references: [id], fields: [receiverId])
+  transaction       Transaction?   @relation(references: [id], fields: [transactionId]) // will only be created and connected once processed
+
+  transactionId String? @unique
+  sourceId      String
+  receiverId    String
 }

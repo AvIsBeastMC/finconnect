@@ -2,7 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useFonts } from 'expo-font';
-import { Stack as ExpoStack, useRouter } from "expo-router";
+import { Stack as ExpoStack, useLocalSearchParams, useRouter } from "expo-router";
 import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
 import { api } from "~/utils/api";
@@ -205,10 +205,20 @@ export default function MainPage() {
 
   if (!auth) return <Login />
 
+
   return (
     <>
       <ExpoStack.Screen options={{
         title: 'Home',
+        headerTitle() {
+          return (
+            <Box className="flex flex-row">
+              <LayoutGrid color="black" size={18} className="self-center" />
+
+              <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">Home</Text>
+            </Box>
+          )
+        },
         headerRight() {
           const signOut = async () => {
             await SecureStore.deleteItemAsync('ACCOUNT_LOGIN');

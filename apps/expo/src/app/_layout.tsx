@@ -6,8 +6,8 @@ import { StatusBar } from "expo-status-bar";
 import { Box, NativeBaseProvider } from "native-base";
 import { Text } from "native-base";
 import { TRPCProvider } from "~/utils/api";
-import { BadgeInfo, BadgePlus, LayoutGrid, WalletCards } from 'lucide-react-native'
-import { atom, useAtom } from 'jotai'
+import { BadgeInfo, BadgePlus, Globe, LayoutGrid, ListIcon, WalletCards } from 'lucide-react-native'
+import { atom, useAtom, useAtomValue } from 'jotai'
 import type { Account } from "@prisma/client";
 import { useFonts } from "expo-font";
 
@@ -15,7 +15,7 @@ type AuthState = Account;
 export const AuthState = atom<AuthState | undefined>(undefined)
 
 const RootLayout = () => {
-  const [auth, setAuth] = useAtom(AuthState);
+  const auth = useAtomValue(AuthState);
   const [fontsLoaded] = useFonts({
     'Inter': require('../fonts/Inter.ttf'),
     // Poppins
@@ -96,6 +96,36 @@ const RootLayout = () => {
                       <BadgeInfo color="black" size={18} className="self-center" />
 
                       <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">Wallet Information</Text>
+                    </Box>
+                  )
+                },
+              }} />
+
+            <Tabs.Screen name="wallets/[id]/transactions"
+              options={{
+                title: 'Wallet Transactions',
+                href: null,
+                headerTitle() {
+                  return (
+                    <Box className="flex flex-row">
+                      <ListIcon color="black" size={18} className="self-center" />
+
+                      <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">Wallet Transactions</Text>
+                    </Box>
+                  )
+                },
+              }} />
+
+            <Tabs.Screen name="wallets/[id]/international/[id]"
+              options={{
+                title: 'International Payment',
+                href: null,
+                headerTitle() {
+                  return (
+                    <Box className="flex flex-row">
+                      <Globe color="black" size={18} className="self-center" />
+
+                      <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">International Payment</Text>
                     </Box>
                   )
                 },
