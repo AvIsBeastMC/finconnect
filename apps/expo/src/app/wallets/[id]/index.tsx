@@ -10,7 +10,7 @@ import React, { useEffect, useState } from 'react'
 import { api } from '~/utils/api'
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router'
 import { Stack as ExpoStack } from "expo-router";
-import { Text, Box, FormControl, Input, Container, Actionsheet, Button, Modal } from 'native-base'
+import { Text, Box, FormControl, Input, Container, Actionsheet, Button, Modal, Spinner } from 'native-base'
 import { Keyboard, RefreshControl, ScrollView, TouchableOpacity } from 'react-native'
 import { AuthState } from '~/app/_layout'
 import { AtSign, Banknote, CircleDollarSign, Globe, ListIcon, Nfc, Send, UserCircle2, Wallet } from 'lucide-react-native';
@@ -27,6 +27,8 @@ export default function WalletInfo() {
   const { data, error, isLoading, isRefetching, refetch } = api.general.getWalletInformation.useQuery({
     accountId: auth ? auth.id : 'unauthed',
     walletId: id as string
+  }, {
+    refetchInterval: 15000
   })
   const [currencyChoose, setCurrencyChoose] = useState<boolean>(false)
   const navigation = useNavigation();
@@ -37,9 +39,9 @@ export default function WalletInfo() {
   const { mutate: intlMutate } = api.general.initiateInternationalPayment.useMutation()
 
   // Inputs
-  const [finConnectAddress, setFinConnectAddress] = useState<string>()
-  const [currency, setCurrency] = useState<string>()
-  const [amount, setAmount] = useState<string>()
+  const [finConnectAddress, setFinConnectAddress] = useState<string | undefined>()
+  const [currency, setCurrency] = useState<string | undefined>()
+  const [amount, setAmount] = useState<string | undefined>()
 
   useEffect(() => {
     if (!auth) return router.push('/')
@@ -52,7 +54,11 @@ export default function WalletInfo() {
   if (!auth) return <></>
 
   if (!data) return (
-    <ScrollView refreshControl={<RefreshControl refreshing={loading || isRefetching} />} />
+    <Box alignItems="center" className='my-auto flex'>
+      <Box w="100%">
+        <Spinner size={40} color="black" />
+      </Box>
+    </Box>
   )
   const { allWallets, currencyWallet } = data;
 
@@ -60,13 +66,21 @@ export default function WalletInfo() {
   const getCountryOfCurrency = (c: string) => all().filter((country) => country.currencyCode == c);
 
   const payProcedures = () => {
-    if (!amount || !currency || !finConnectAddress) return;
+    if (!amount || !finConnectAddress) return;
+
+    if (parseInt(amount) <= 0) {
+      Toast.show({
+        type: 'error',
+        text1: 'Bad Input',
+        text2: 'Balance should be above 0!'
+      })
+    }
 
     setLoading(true)
 
     mutate({
       amount: parseInt(amount),
-      currency,
+      currency: currencyWallet.currency,
       payerId: auth.id,
       receiverEmail: finConnectAddress
     }, {
@@ -74,16 +88,31 @@ export default function WalletInfo() {
         Toast.show({
           type: 'success',
           text1: 'Transfer Successful',
-          text2: `${currency} ${amount} transfered to '${currency}' wallet of ${finConnectAddress}!`
+          text2: `${currencyWallet.currency} ${amount} transfered to '${data}' wallet of ${finConnectAddress}!`
         })
+
+        refetch()
+
+        setModalVisible(false)
+        setLoading(false)
       },
       onError(e) {
+        setModalVisible(false);
         // console.log(e.message);
         if (e.message.includes('CAN_DO_INTL')) {
-          setModalVisible(false);
 
-          setCanDoIntl(e.message.split(" ")[1])
+          setCanDoIntl(e.message)
+
+          setLoading(false)
+
+          return;
         }
+
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: e.message
+        })
 
         setLoading(false)
       }
@@ -91,17 +120,18 @@ export default function WalletInfo() {
   }
 
   const payInternational = () => {
-    if (!amount || !currency || !finConnectAddress || !canDoIntl) return;
+    if (!amount || !finConnectAddress || !canDoIntl) return;
 
     setLoading(true);
 
     intlMutate({
       amount: parseInt(amount),
       payerWallet: currencyWallet.id,
-      receiverWallet: canDoIntl
+      receiverWallet: canDoIntl.split(' ')[1]!
     }, {
       onSuccess(data) {
-        alert(JSON.stringify(data))
+        setCanDoIntl(undefined)
+        router.push(`international/${data.id}`)
       },
       onError(e) {
         alert(e.message)
@@ -111,8 +141,7 @@ export default function WalletInfo() {
   }
 
   return (
-    <>
-      <Toast />
+    <ScrollView refreshControl={<RefreshControl onRefresh={() => refetch()} refreshing={loading || isLoading || isRefetching} />}>
       <Box className='rounded-md m-6 px-6 py-4 bg-cyan-300'>
         <Box className='flex flex-row gap-2'>
           <Box className='w-1/2'>
@@ -138,7 +167,7 @@ export default function WalletInfo() {
               <Text className='mt-auto text-xs text-right' mb={-1}>Currency Regions</Text>
               <Text mt={1} className='text-sm text-right' fontFamily="ProductSansBold">
                 {/* {data.} */}
-                {getCountryOfCurrency(currencyWallet.currency).map((c) => c.flag)}
+                {getCountryOfCurrency(currencyWallet.currency).map((c) => c.flag).slice(0, 7).join('')}
               </Text>
             </Box>
           </Box>
@@ -147,13 +176,9 @@ export default function WalletInfo() {
 
       <Container className='flex mx-auto'>
         <Container className="flex flex-row gap-1 min-w-full justify-center">
-          <TouchableOpacity onPress={() => setModalVisible(true)} className="w-1/2 py-4 border-2 border-gray-200 bg-white rounded-md">
+          <TouchableOpacity onPress={() => setModalVisible(true)} className="w-full py-4 border-2 border-gray-200 bg-white rounded-md">
             <Nfc color="gray" size={30} className="mx-auto" />
             <Text mt={2} className="text-center text-xs" fontFamily="Inter">User-to-User Pay</Text>
-          </TouchableOpacity>
-          <TouchableOpacity className="w-1/2 py-4 border-2 border-gray-200 bg-white rounded-md">
-            <Globe color="gray" size={30} className="mx-auto" />
-            <Text mt={2} className="text-center text-xs" fontFamily="Inter">International Pay</Text>
           </TouchableOpacity>
         </Container>
 
@@ -186,21 +211,6 @@ export default function WalletInfo() {
               </FormControl.Label>
               <Input autoCapitalize='none' keyboardType='email-address' value={finConnectAddress} onChangeText={(n) => setFinConnectAddress(n)} />
             </FormControl>
-            <FormControl className='mb-2'>
-              <FormControl.Label>
-                <Wallet size={12} stroke="black" className='self-center mr-1' />
-                Your Wallet
-              </FormControl.Label>
-              <Input onChange={(e) => {
-                setCurrency(undefined)
-                Keyboard.dismiss()
-                setCurrencyChoose(true)
-              }} value={currency ? CurrencyData.find((c) => c.code == currency)?.currency : undefined} className='bg-gray-100' onFocus={(e) => {
-                e.preventDefault();
-                Keyboard.dismiss()
-                setCurrencyChoose(true)
-              }} />
-            </FormControl>
             <FormControl mb={4}>
               <FormControl.Label>
                 <CircleDollarSign size={12} stroke="black" className='self-center mr-1' />
@@ -232,11 +242,11 @@ export default function WalletInfo() {
           <Modal.CloseButton />
           <Modal.Header className='flex flex-row'>
             <Globe size={12} stroke="black" className='self-center mr-2' />
-            International Payment
+            Currency Conversion
           </Modal.Header>
           <Modal.Body>
             <Text className='mb-2' fontFamily="Inter">
-              Hey! Even though the User does not have a '{currency}' Wallet, you can choose to convert your amount to the currency of their Default Wallet!
+              Hey! Even though the User does not have a '{currencyWallet.currency}' Wallet, you can choose to convert your amount to the currency of their Default Wallet i.e. {canDoIntl?.split(' ')[2]}!
             </Text>
           </Modal.Body>
           <Modal.Footer>
@@ -250,7 +260,7 @@ export default function WalletInfo() {
               }}>
                 Cancel
               </Button>
-              <Button isLoading={loading} onPress={() => payInternational()} variant="subtle" className='bg-gray-200' isDisabled={!finConnectAddress || !currency || !amount}>
+              <Button isLoading={loading} onPress={() => payInternational()} variant="subtle" className='bg-gray-200' isDisabled={!finConnectAddress || !amount}>
                 <Send size={12} stroke="black" className='self-center' />
               </Button>
             </Button.Group>
@@ -272,6 +282,8 @@ export default function WalletInfo() {
           </ScrollView>
         </Actionsheet.Content>
       </Actionsheet>
-    </>
+
+      <Toast />
+    </ScrollView>
   )
 }

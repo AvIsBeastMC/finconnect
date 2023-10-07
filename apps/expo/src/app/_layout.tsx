@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import React from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Box, NativeBaseProvider } from "native-base";
 import { Text } from "native-base";
@@ -10,12 +10,13 @@ import { BadgeInfo, BadgePlus, Globe, LayoutGrid, ListIcon, WalletCards } from '
 import { atom, useAtom, useAtomValue } from 'jotai'
 import type { Account } from "@prisma/client";
 import { useFonts } from "expo-font";
-
+import { LogBox } from 'react-native';
 type AuthState = Account;
 export const AuthState = atom<AuthState | undefined>(undefined)
 
 const RootLayout = () => {
   const auth = useAtomValue(AuthState);
+  const router = useRouter()
   const [fontsLoaded] = useFonts({
     'Inter': require('../fonts/Inter.ttf'),
     // Poppins
@@ -26,6 +27,7 @@ const RootLayout = () => {
     'ProductSans': require('../fonts/Product-Sans.ttf'),
     'ProductSansBold': require('../fonts/Product-Sans-Bold.ttf'),
   });
+  LogBox.ignoreAllLogs()
 
   if (!fontsLoaded) return <></>;
 
@@ -116,7 +118,7 @@ const RootLayout = () => {
                 },
               }} />
 
-            <Tabs.Screen name="wallets/[id]/international/[id]"
+            <Tabs.Screen name="international/[id]"
               options={{
                 title: 'International Payment',
                 href: null,

@@ -35,22 +35,22 @@ model CurrencyWallet {
 
 model Transaction {
   id                   String                @id @default(cuid())
-  currencyWallet       CurrencyWallet        @relation(references: [id], fields: [currencyWalletId])
+  currencyWallet       CurrencyWallet?       @relation(references: [id], fields: [currencyWalletId])
   target               String
   amount               Float
   time                 DateTime              @default(now())
   internationalPayment InternationalPayment?
-  currencyWalletId     String
+  currencyWalletId     String?
 }
 
 model Deposit {
-  id             String         @id @default(cuid())
+  id             String          @id @default(cuid())
   amount         Float
   source         String
-  currencyWallet CurrencyWallet @relation(references: [id], fields: [currencyWalletId])
-  time           DateTime       @default(now())
+  currencyWallet CurrencyWallet? @relation(references: [id], fields: [currencyWalletId])
+  time           DateTime        @default(now())
 
-  currencyWalletId String
+  currencyWalletId String?
 }
 
 model InternationalPayment {

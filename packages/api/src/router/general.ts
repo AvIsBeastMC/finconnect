@@ -9,7 +9,167 @@ import moment from "moment";
 import type { AxiosResponse } from 'axios';
 import axios from 'axios'
 
+const convert = async (amount: number, currencyFrom: string, currencyTo: string) => {
+  const params = `/pair/${currencyFrom}/${currencyTo}/${amount}`
+
+  const url = " https://v6.exchangerate-api.com/v6/7e718146d25abc8e31f12e10" + params;
+
+  const response: AxiosResponse<{
+    conversion_rate: number,
+    conversion_result: number
+  }> = await axios.get(url);
+
+  return {
+    conversion: response.data.conversion_result,
+    rate: response.data.conversion_rate
+  }
+}
+
 export const generalRouter = createTRPCRouter({
+  setDefaultWallet: publicProcedure.input(z.object({
+    walletId: z.string(),
+    userId: z.string()
+  })).mutation(async ({ ctx, input }) => {
+    const { walletId, userId } = input;
+    const { prisma } = ctx;
+
+    const query = await prisma.account.update({
+      where: {
+        id: userId
+      },
+      data: {
+        defaultWallet: walletId
+      }
+    });
+
+    return query;
+  }),
+  getInternationalPayment: publicProcedure.input(z.object({
+    id: z.string()
+  })).query(async ({ ctx, input }) => {
+    const { prisma } = ctx;
+    const { id } = input;
+
+    const internationalPayment = await prisma.internationalPayment.findUniqueOrThrow({
+      where: {
+        id
+      },
+      include: {
+        receiver: {
+          include: {
+            account: true
+          }
+        },
+        sender: true
+      }
+    });
+
+    const { conversion, rate } = await convert(internationalPayment.amountInCurrency1, internationalPayment.sender.currency, internationalPayment.receiver.currency);
+
+    return {
+      ...internationalPayment,
+      conversion
+    };
+  }),
+  validatePin: publicProcedure.input(z.object({
+    id: z.string(),
+    pin: z.number()
+  })).mutation(async ({ ctx, input }) => {
+    const { prisma } = ctx;
+    const { id, pin } = input
+
+    const walletInformation = await prisma.currencyWallet.findUniqueOrThrow({
+      where: {
+        id
+      }
+    })
+
+    if (walletInformation.pin == pin) return 'true'
+
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Incorrect Pin Entered!'
+    });
+  }),
+  processInternationalPayment: publicProcedure.input(z.object({
+    id: z.string()
+  })).mutation(async ({ ctx, input }) => {
+    const { id } = input;
+    const { prisma } = ctx;
+
+    if (id == 'bad') throw new TRPCError({
+      code: 'BAD_REQUEST'
+    })
+
+    const internationalPayment = await prisma.internationalPayment.findUniqueOrThrow({
+      where: {
+        id
+      },
+      include: {
+        sender: true,
+        receiver: true
+      }
+    });
+
+    // CHECK
+    const moneyToDeductFromSender = internationalPayment.amountInCurrency1
+    const moneyToIncrementToReceiver = internationalPayment.amountInCurrency1 * internationalPayment.exchangeRate1to2;
+
+    const senderWallet = await prisma.currencyWallet.findUniqueOrThrow({
+      where: {
+        id: internationalPayment.sender.id
+      }
+    })
+
+    if (senderWallet.balance < moneyToDeductFromSender) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: 'Insufficient Balance'
+      })
+    }
+
+    // PROCESS
+    const deduction = prisma.currencyWallet.update({
+      where: {
+        id: internationalPayment.sender.id
+      },
+      data: {
+        balance: {
+          decrement: moneyToDeductFromSender
+        }
+      }
+    });
+
+    const increment = prisma.currencyWallet.update({
+      where: {
+        id: internationalPayment.receiver.id
+      },
+      data: {
+        balance: {
+          increment: moneyToIncrementToReceiver
+        }
+      }
+    })
+
+    // SETUP TRANSACTION FIELD - MEANS TRANSACTION COMPLETED
+    const transactionCompleted = prisma.internationalPayment.update({
+      where: {
+        id
+      },
+      data: {
+        transaction: {
+          create: {
+            amount: moneyToDeductFromSender,
+            target: `[INTL] ${internationalPayment.sender.currency}_${moneyToIncrementToReceiver} ${moneyToIncrementToReceiver}`
+          }
+        }
+      }
+    });
+
+    const processes = await prisma.$transaction([deduction, increment, transactionCompleted])
+
+    return;
+  }),
   initiateInternationalPayment: publicProcedure.input(z.object({
     payerWallet: z.string(),
     receiverWallet: z.string(),
@@ -32,10 +192,11 @@ export const generalRouter = createTRPCRouter({
     });
 
     // check
-    const validateWallet1 = PayerWallet.balance > amount
+    const validateWallet1 = PayerWallet.balance >= amount
     const validateWallet2 = ReceiverWallet ? true : false
 
     if (!validateWallet1 || !validateWallet2) {
+      console.log(validateWallet1, validateWallet2)
       throw new TRPCError({
         code: 'BAD_REQUEST',
         message: "Invalid Wallet Data Encountered"
@@ -43,21 +204,6 @@ export const generalRouter = createTRPCRouter({
     };
 
     // do it, do the conversion, and add the amount
-    const convert = async (amount: number, currencyFrom: string, currencyTo: string) => {
-      const params = `/pair/${currencyFrom}/${currencyTo}/${amount}`
-
-      const url = " https://v6.exchangerate-api.com/v6/7e718146d25abc8e31f12e10" + params;
-
-      const response: AxiosResponse<{
-        conversion_rate: number,
-        conversion_result: number
-      }> = await axios.get(url);
-
-      return {
-        conversion: response.data.conversion_result,
-        rate: response.data.conversion_rate
-      }
-    }
 
     const { conversion, rate } = await convert(amount, PayerWallet.currency, ReceiverWallet.currency);
 
@@ -125,7 +271,7 @@ export const generalRouter = createTRPCRouter({
     if (!receiverHasCurrencyWallet) {
       throw new TRPCError({
         code: "FORBIDDEN",
-        message: receiverHasADefaultWallet ? `CAN_DO_INTL ${receiverHasADefaultWallet.id} ${receiverHasADefaultWallet.currency}` : `No '${currency}' Wallet found in the Account of the Reciever...`
+        message: receiverHasADefaultWallet ? `CAN_DO_INTL ${receiverHasADefaultWallet.id} ${receiverHasADefaultWallet.currency}` : `No ${currency}/Default Wallet found in the Account of the Reciever...`
       })
     }
     // message[0] is CAN_DO_INTL
@@ -167,7 +313,7 @@ export const generalRouter = createTRPCRouter({
 
     const procedures = await prisma.$transaction([deductAmount, addMoneyToReceiversWallet, createTransaction]);
 
-    return;
+    return procedures[1].currency;
   }),
   getWalletInformation: publicProcedure.input(z.object({
     accountId: z.string(),
