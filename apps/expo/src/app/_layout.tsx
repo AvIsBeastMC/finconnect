@@ -11,6 +11,7 @@ import { atom, useAtom, useAtomValue } from 'jotai'
 import type { Account } from "@prisma/client";
 import { useFonts } from "expo-font";
 import { LogBox } from 'react-native';
+import { StripeProvider } from "@stripe/stripe-react-native";
 type AuthState = Account;
 export const AuthState = atom<AuthState | undefined>(undefined)
 
@@ -35,104 +36,104 @@ const RootLayout = () => {
     <TRPCProvider>
       <NativeBaseProvider>
         <SafeAreaProvider>
-          {/*
-          The Stack component displays the current page.
-          It also allows you to configure your screens 
-        */}
-          <Tabs>
-            <Tabs.Screen name="index"
-              options={{
-                title: 'Home',
-                headerTitle() {
-                  return (
-                    <Box className="flex flex-row">
-                      <LayoutGrid color="black" size={18} className="self-center" />
+          <StripeProvider
+            publishableKey="pk_test_51JaBz8SE4v5ScYygZ1J5hAGylKJiLBeYLc8y5hplLCOcTplvbnldgTpxwoe5AvvUbbYhAi75OEkr1g3yUYRN7vtj00HR33tobe"
+          >
+            <Tabs>
+              <Tabs.Screen name="index"
+                options={{
+                  title: 'Home',
+                  headerTitle() {
+                    return (
+                      <Box className="flex flex-row">
+                        <LayoutGrid color="black" size={18} className="self-center" />
 
-                      <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">Home</Text>
-                    </Box>
-                  )
-                },
-                tabBarLabel: () => <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="-mt-2 mb-1 text-black text-xs">Home</Text>,
-                tabBarIcon: ({ focused }) => <LayoutGrid color={focused ? "black" : "gray"} size={20} className="" />,
-              }} />
+                        <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">Home</Text>
+                      </Box>
+                    )
+                  },
+                  tabBarLabel: () => <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="-mt-2 mb-1 text-black text-xs">Home</Text>,
+                  tabBarIcon: ({ focused }) => <LayoutGrid color={focused ? "black" : "gray"} size={20} className="" />,
+                }} />
 
-            <Tabs.Screen name="wallets/all"
-              options={{
-                title: 'All Wallets',
-                href: auth ? 'wallets/all' : null,
-                headerTitle() {
-                  return (
-                    <Box className="flex flex-row">
-                      <WalletCards color="black" size={18} className="self-center" />
+              <Tabs.Screen name="wallets/all"
+                options={{
+                  title: 'All Wallets',
+                  href: auth ? 'wallets/all' : null,
+                  headerTitle() {
+                    return (
+                      <Box className="flex flex-row">
+                        <WalletCards color="black" size={18} className="self-center" />
 
-                      <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">All Wallets</Text>
-                    </Box>
-                  )
-                },
-                tabBarLabel: () => <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="-mt-2 mb-1 text-black text-xs">All Wallets</Text>,
-                tabBarIcon: ({ focused }) => <WalletCards color={focused ? "black" : "gray"} size={20} className="" />,
-              }} />
+                        <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">All Wallets</Text>
+                      </Box>
+                    )
+                  },
+                  tabBarLabel: () => <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="-mt-2 mb-1 text-black text-xs">All Wallets</Text>,
+                  tabBarIcon: ({ focused }) => <WalletCards color={focused ? "black" : "gray"} size={20} className="" />,
+                }} />
 
-            <Tabs.Screen name="wallets/create"
-              options={{
-                title: 'Create Wallet',
-                href: null,
-                headerTitle() {
-                  return (
-                    <Box className="flex flex-row">
-                      <BadgePlus color="black" size={18} className="self-center" />
+              <Tabs.Screen name="wallets/create"
+                options={{
+                  title: 'Create Wallet',
+                  href: null,
+                  headerTitle() {
+                    return (
+                      <Box className="flex flex-row">
+                        <BadgePlus color="black" size={18} className="self-center" />
 
-                      <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">Create Wallet</Text>
-                    </Box>
-                  )
-                },
-              }} />
+                        <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">Create Wallet</Text>
+                      </Box>
+                    )
+                  },
+                }} />
 
-            <Tabs.Screen name="wallets/[id]/index"
-              options={{
-                title: 'Wallet Information',
-                href: null,
-                headerTitle() {
-                  return (
-                    <Box className="flex flex-row">
-                      <BadgeInfo color="black" size={18} className="self-center" />
+              <Tabs.Screen name="wallets/[id]/index"
+                options={{
+                  title: 'Wallet Information',
+                  href: null,
+                  headerTitle() {
+                    return (
+                      <Box className="flex flex-row">
+                        <BadgeInfo color="black" size={18} className="self-center" />
 
-                      <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">Wallet Information</Text>
-                    </Box>
-                  )
-                },
-              }} />
+                        <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">Wallet Information</Text>
+                      </Box>
+                    )
+                  },
+                }} />
 
-            <Tabs.Screen name="wallets/[id]/transactions"
-              options={{
-                title: 'Wallet Transactions',
-                href: null,
-                headerTitle() {
-                  return (
-                    <Box className="flex flex-row">
-                      <ListIcon color="black" size={18} className="self-center" />
+              <Tabs.Screen name="wallets/[id]/transactions"
+                options={{
+                  title: 'Wallet Transactions',
+                  href: null,
+                  headerTitle() {
+                    return (
+                      <Box className="flex flex-row">
+                        <ListIcon color="black" size={18} className="self-center" />
 
-                      <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">Wallet Transactions</Text>
-                    </Box>
-                  )
-                },
-              }} />
+                        <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">Wallet Transactions</Text>
+                      </Box>
+                    )
+                  },
+                }} />
 
-            <Tabs.Screen name="international/[id]"
-              options={{
-                title: 'International Payment',
-                href: null,
-                headerTitle() {
-                  return (
-                    <Box className="flex flex-row">
-                      <Globe color="black" size={18} className="self-center" />
+              <Tabs.Screen name="international/[id]"
+                options={{
+                  title: 'International Payment',
+                  href: null,
+                  headerTitle() {
+                    return (
+                      <Box className="flex flex-row">
+                        <Globe color="black" size={18} className="self-center" />
 
-                      <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">International Payment</Text>
-                    </Box>
-                  )
-                },
-              }} />
-          </Tabs>
+                        <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">International Payment</Text>
+                      </Box>
+                    )
+                  },
+                }} />
+            </Tabs>
+          </StripeProvider>
           <StatusBar />
         </SafeAreaProvider>
       </NativeBaseProvider>

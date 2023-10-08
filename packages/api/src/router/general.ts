@@ -8,6 +8,10 @@ import { z } from 'zod';
 import moment from "moment";
 import type { AxiosResponse } from 'axios';
 import axios from 'axios'
+import Stripe from 'stripe'
+const stripe = new Stripe('sk_test_51JaBz8SE4v5ScYygqpKyaKDctk0Q4JvgocYTWJsIb49kvsYWWVlF79aXYD540ztpHOLDuBkP5ZhCetGj9wLPQerM002BxIf2V1', {
+  apiVersion: '2023-08-16'
+});
 
 const convert = async (amount: number, currencyFrom: string, currencyTo: string) => {
   const params = `/pair/${currencyFrom}/${currencyTo}/${amount}`
@@ -389,20 +393,28 @@ export const generalRouter = createTRPCRouter({
       return;
     }
 
-    const query = await prisma.currencyWallet.create({
-      data: {
-        pin,
-        currency,
-        balance: money,
-        account: {
-          connect: {
-            id: userId
-          }
-        }
-      }
+    // const query = await prisma.currencyWallet.create({
+    //   data: {
+    //     pin,
+    //     currency,
+    //     balance: money,
+    //     account: {
+    //       connect: {
+    //         id: userId
+    //       }
+    //     }
+    //   }
+    // })
+
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: money * 100,
+      currency,
+      payment_method_types: ['card'],
+      confirmation_method: "automatic",
     })
 
-    return query;
+    return paymentIntent.client_secret;
   }),
   getWallets: publicProcedure.input(z.object({
     account: z.string()

@@ -13,6 +13,7 @@ import { CurrencySymbols } from '~/data/currency'
 import { data as CurrencyData } from 'currency-codes'
 import { BadgeCheck, KeySquare, LockKeyhole } from 'lucide-react-native'
 import Toast from 'react-native-toast-message'
+import { useStripe } from '@stripe/stripe-react-native'
 
 export default function CreateWallet() {
   const router = useRouter()
@@ -25,6 +26,7 @@ export default function CreateWallet() {
   const [currency, setCurrency] = useState<string>()
   const [pin, setPin] = useState<string>()
   const [moneyToAdd, setMoneyToAdd] = useState<string>()
+  const stripe = useStripe();
 
   useEffect(() => {
     if (!auth) return router.push('/')
@@ -55,20 +57,37 @@ export default function CreateWallet() {
       money: parseInt(moneyToAdd),
       userId: auth.id
     }, {
-      onSuccess(data) {
-        Toast.show({
-          type: 'success',
-          text1: 'Success',
-          text2: `New Currency Wallet '${data!.currency}' added!`
-        });
+      async onSuccess(data) {
+        // Toast.show({
+        //   type: 'success',
+        //   text1: 'Success',
+        //   text2: `New Currency Wallet '${data!.currency}' added!`
+        // });
 
         setCurrency(undefined);
         setPin(undefined);
         setMoneyToAdd(undefined);
 
-        setTimeout(() => {
-          router.push('wallets/all?toRefetch=true')
-        }, 2000);
+        setLoading(false)
+
+        const initSheet = await stripe.initPaymentSheet({
+          paymentIntentClientSecret: data!,
+          merchantDisplayName: 'Arunnya',
+        })
+
+        const presentSheet = await stripe.presentPaymentSheet()
+
+        if (presentSheet.error || initSheet.error) {
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: presentSheet.error?.message || initSheet.error?.message
+          })
+        }
+
+        // setTimeout(() => {
+        //   router.push('wallets/all?toRefetch=true')
+        // }, 2000);
       },
       onError(error) {
         Toast.show({
