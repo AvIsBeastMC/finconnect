@@ -1,7 +1,3 @@
-
-
-
-
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -30,7 +26,6 @@ export default function WalletInfo() {
   }, {
     refetchInterval: 15000
   })
-  const [currencyChoose, setCurrencyChoose] = useState<boolean>(false)
   const navigation = useNavigation();
   const [modalVisible, setModalVisible] = useState<boolean>(false)
   const [canDoIntl, setCanDoIntl] = useState<string>()
@@ -40,7 +35,6 @@ export default function WalletInfo() {
 
   // Inputs
   const [finConnectAddress, setFinConnectAddress] = useState<string | undefined>()
-  const [currency, setCurrency] = useState<string | undefined>()
   const [amount, setAmount] = useState<string | undefined>()
 
   useEffect(() => {
@@ -193,7 +187,6 @@ export default function WalletInfo() {
 
       <Modal isOpen={modalVisible} onClose={() => {
         setFinConnectAddress(undefined)
-        setCurrency(undefined)
         setAmount(undefined)
         setModalVisible(false)
       }} size="lg">
@@ -223,13 +216,12 @@ export default function WalletInfo() {
             <Button.Group space={2}>
               <Button variant="ghost" colorScheme="blueGray" onPress={() => {
                 setFinConnectAddress(undefined)
-                setCurrency(undefined)
                 setAmount(undefined)
                 setModalVisible(false)
               }}>
                 Cancel
               </Button>
-              <Button isLoading={loading} onPress={() => payProcedures()} variant="subtle" className='bg-gray-200' isDisabled={!finConnectAddress || !currency || !amount}>
+              <Button isLoading={loading} onPress={() => payProcedures()} variant="subtle" className='bg-gray-200' isDisabled={!finConnectAddress || !amount}>
                 <Send size={12} stroke="black" className='self-center' />
               </Button>
             </Button.Group>
@@ -253,7 +245,6 @@ export default function WalletInfo() {
             <Button.Group space={2}>
               <Button variant="ghost" colorScheme="blueGray" onPress={() => {
                 setFinConnectAddress(undefined)
-                setCurrency(undefined)
                 setAmount(undefined)
                 setModalVisible(false)
                 setCanDoIntl(undefined)
@@ -267,21 +258,6 @@ export default function WalletInfo() {
           </Modal.Footer>
         </Modal.Content>
       </Modal>
-
-      <Actionsheet isOpen={currencyChoose} onClose={() => setCurrencyChoose(false)}>
-        <Actionsheet.Content>
-          <ScrollView className='w-full'>
-            {Object.keys(CurrencySymbols).map((c, i) => (
-              <Actionsheet.Item onPress={() => {
-                setCurrency(c)
-                setCurrencyChoose(false)
-              }} key={i}>
-                {c}
-              </Actionsheet.Item>
-            ))}
-          </ScrollView>
-        </Actionsheet.Content>
-      </Actionsheet>
 
       <Toast />
     </ScrollView>

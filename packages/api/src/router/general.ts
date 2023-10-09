@@ -30,6 +30,75 @@ const convert = async (amount: number, currencyFrom: string, currencyTo: string)
 }
 
 export const generalRouter = createTRPCRouter({
+  getActivity: publicProcedure.input(z.object({
+    accountId: z.string()
+  })).mutation(async ({ ctx, input }) => {
+    const { accountId } = input;
+    const { prisma } = ctx;
+
+    const query = await prisma.transaction.findMany({
+      where: {
+        currencyWallet: {
+          accountId
+        }
+      },
+      include: {
+        currencyWallet: true,
+        internationalPayment: true
+      }
+    })
+  }),
+  getProfileInfo: publicProcedure.input(z.object({
+    id: z.string()
+  })).query(async ({ ctx, input }) => {
+    const { id } = input;
+    const { prisma } = ctx;
+
+    if (id == 'unauthed') throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Not Authenticated!'
+    })
+
+    const account = await prisma.account.findUniqueOrThrow({
+      where: {
+        id
+      },
+      include: {
+        currencyWallets: true,
+        devices: true
+      }
+    });
+
+    const lastTransactionMade = await prisma.transaction.findFirst({
+      where: {
+        currencyWallet: {
+          accountId: id
+        }
+      },
+      orderBy: {
+        time: 'desc'
+      }
+    })
+
+    if (account.defaultWallet) {
+      const defaultWallet = await prisma.currencyWallet.findUniqueOrThrow({
+        where: {
+          id: account.defaultWallet
+        }
+      })
+
+      return {
+        account,
+        lastTransactionMade,
+        defaultWallet
+      };
+    }
+
+    return {
+      account,
+      lastTransactionMade,
+    };
+  }),
   setDefaultWallet: publicProcedure.input(z.object({
     walletId: z.string(),
     userId: z.string()
@@ -45,6 +114,14 @@ export const generalRouter = createTRPCRouter({
         defaultWallet: walletId
       }
     });
+
+    const log = await prisma.log.create({
+      data: {
+        message: `[DEFAULT WALLET] ${walletId} ${moment().format()}`,
+        type: 'MISCELLANEOUS',
+        accountId: query.id
+      }
+    })
 
     return query;
   }),
@@ -170,6 +247,14 @@ export const generalRouter = createTRPCRouter({
       }
     });
 
+    const log = await prisma.log.create({
+      data: {
+        message: `[COMPLETE] ${id} ${moment().format()}`,
+        type: 'INTL-PAYMENT',
+        accountId: senderWallet.id
+      }
+    })
+
     const processes = await prisma.$transaction([deduction, increment, transactionCompleted])
 
     return;
@@ -217,6 +302,14 @@ export const generalRouter = createTRPCRouter({
         exchangeRate1to2: rate,
         sourceId: payerWallet,
         receiverId: receiverWallet,
+      }
+    })
+
+    const log = await prisma.log.create({
+      data: {
+        message: `[INITIATE] ${createInternationalPayment.id} ${moment().format()}`,
+        type: 'INTL-PAYMENT',
+        accountId: payerWallet
       }
     })
 
@@ -315,7 +408,15 @@ export const generalRouter = createTRPCRouter({
       }
     })
 
-    const procedures = await prisma.$transaction([deductAmount, addMoneyToReceiversWallet, createTransaction]);
+    const log = prisma.log.create({
+      data: {
+        message: `[LOCAL TRANSACTION] ${amount} ${receiverAccount.id} ${moment().format()}`,
+        type: 'LOCAL-PAYMENT',
+        accountId: payerWallet.id
+      }
+    })
+
+    const procedures = await prisma.$transaction([deductAmount, addMoneyToReceiversWallet, createTransaction, log]);
 
     return procedures[1].currency;
   }),
@@ -393,25 +494,32 @@ export const generalRouter = createTRPCRouter({
       return;
     }
 
-    // const query = await prisma.currencyWallet.create({
-    //   data: {
-    //     pin,
-    //     currency,
-    //     balance: money,
-    //     account: {
-    //       connect: {
-    //         id: userId
-    //       }
-    //     }
-    //   }
-    // })
-
+    const query = await prisma.currencyWallet.create({
+      data: {
+        pin,
+        currency,
+        balance: money,
+        account: {
+          connect: {
+            id: userId
+          }
+        }
+      }
+    })
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: money * 100,
       currency,
       payment_method_types: ['card'],
       confirmation_method: "automatic",
+    })
+
+    const log = await prisma.log.create({
+      data: {
+        message: `[NEW WALLET] ${query.id} ${moment().format()}`,
+        type: 'MISCELLANEOUS',
+        accountId: query.id
+      }
     })
 
     return paymentIntent.client_secret;

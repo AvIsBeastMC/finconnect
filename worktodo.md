@@ -1,0 +1,10 @@
+- Spendings/Transactions Page
+- Account Profile Page
+- Setup Logs [DONE]
+  - on Login ✅
+  - on Transactions ✅
+  - on Wallet Setup ✅
+  - on Set Default Wallet ✅
+- Activity Page
+- [INSANE] DEVICES TRACKING
+  - users can literally deny logins from unknown devices

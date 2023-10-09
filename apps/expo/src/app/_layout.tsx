@@ -6,7 +6,7 @@ import { StatusBar } from "expo-status-bar";
 import { Box, NativeBaseProvider } from "native-base";
 import { Text } from "native-base";
 import { TRPCProvider } from "~/utils/api";
-import { BadgeInfo, BadgePlus, Globe, LayoutGrid, ListIcon, WalletCards } from 'lucide-react-native'
+import { Activity, BadgeInfo, BadgePlus, Globe, LayoutGrid, ListIcon, UserCircle, WalletCards } from 'lucide-react-native'
 import { atom, useAtom, useAtomValue } from 'jotai'
 import type { Account } from "@prisma/client";
 import { useFonts } from "expo-font";
@@ -128,6 +128,40 @@ const RootLayout = () => {
                         <Globe color="black" size={18} className="self-center" />
 
                         <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">International Payment</Text>
+                      </Box>
+                    )
+                  },
+                }} />
+
+              <Tabs.Screen name="activity/index"
+                options={{
+                  title: 'Account Activity',
+                  href: auth ? "activity" : null,
+                  tabBarLabel: () => <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="-mt-2 mb-1 text-black text-xs">Activity</Text>,
+                  tabBarIcon: ({ focused }) => <Activity color={focused ? "black" : "gray"} size={20} className="" />,
+                  headerTitle() {
+                    return (
+                      <Box className="flex flex-row">
+                        <Activity color="black" size={18} className="self-center" />
+
+                        <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">Account Activity</Text>
+                      </Box>
+                    )
+                  },
+                }} />
+
+              <Tabs.Screen name="account"
+                options={{
+                  title: 'Account',
+                  href: auth ? 'account' : null,
+                  tabBarLabel: () => <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="-mt-2 mb-1 text-black text-xs">Account</Text>,
+                  tabBarIcon: ({ focused }) => <UserCircle color={focused ? "black" : "gray"} size={20} className="" />,
+                  headerTitle() {
+                    return (
+                      <Box className="flex flex-row">
+                        <UserCircle color="black" size={18} className="self-center" />
+
+                        <Text style={{ fontFamily: 'Inter', fontWeight: '600' }} className="ml-2 self-center text-black text-md">Account</Text>
                       </Box>
                     )
                   },

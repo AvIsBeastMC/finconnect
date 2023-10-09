@@ -1,14 +1,41 @@
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+import { createTRPCRouter, publicProcedure } from "../trpc";
 import { z } from 'zod';
+import moment from "moment";
 
+const DeviceTypeSchema = z.enum(["ios", "android", "windows", "macos", "web"])
 export const authRouter = createTRPCRouter({
+  logOut: publicProcedure.input(z.object({
+    accountId: z.string(),
+    deviceId: z.string()
+  })).mutation(async ({ ctx, input }) => {
+    const { accountId, deviceId } = input;
+    const { prisma } = ctx;
+
+    const query = await prisma.account.update({
+      where: {
+        id: accountId
+      },
+      data: {
+        devices: {
+          disconnect: {
+            id: deviceId
+          }
+        }
+      }
+    });
+
+    return query;
+  }),
   login: publicProcedure.input(z.object({
-    email: z.string(),
+    email: z.string().email(),
     password: z.string(),
+    deviceId: z.string(),
+    deviceType: DeviceTypeSchema,
+    autoLogin: z.boolean()
   })).mutation(async ({ ctx, input }) => {
     const { prisma } = ctx;
-    const { email, password } = input;
+    const { email, password, deviceType, deviceId, autoLogin } = input;
 
     const query = await prisma.account.findFirst({
       where: {
@@ -20,6 +47,34 @@ export const authRouter = createTRPCRouter({
     if (!query) throw new TRPCError({
       code: "NOT_FOUND",
       message: "Bad Credentials!"
+    })
+
+    await prisma.log.create({
+      data: {
+        message: `[${autoLogin ? 'AUTOLOGIN' : 'LOGIN'}] ${deviceType} ${deviceId} ${moment().format()}`,
+        type: 'LOGIN',
+        accountId: query.id,
+      }
+    })
+
+    // setup/check device
+    const createOrUpdateDevice = await prisma.device.upsert({
+      where: {
+        id: deviceId
+      },
+      create: {
+        id: deviceId,
+        platform: deviceType,
+        account: {
+          connect: {
+            id: query.id
+          }
+        },
+      },
+      update: {
+        accountId: query.id,
+        platform: deviceType
+      }
     })
 
     return query;

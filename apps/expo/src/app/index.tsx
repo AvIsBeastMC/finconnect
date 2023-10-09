@@ -1,6 +1,5 @@
 /* eslint-disable */
-
-/* eslint-disable @typescript-eslint/no-unused-vars */
+import 'react-native-get-random-values';
 import { useFonts } from 'expo-font';
 import { Stack as ExpoStack, useLocalSearchParams, useRouter } from "expo-router";
 import { useAtom } from "jotai";
@@ -10,9 +9,11 @@ import { AuthState } from "./_layout";
 import * as SecureStore from 'expo-secure-store';
 import { Text, Box, Button, FormControl, Input, Stack, Modal, ScrollView, Container } from "native-base";
 import Toast from 'react-native-toast-message'
-import { ArrowLeftRight, BadgePlus, FolderOpen, Globe, KeySquare, LayoutGrid, LogOut, Nfc, PenSquare, WalletCards } from "lucide-react-native";
+import { ArrowLeftRight, BadgePlus, FolderOpen, Globe, KeySquare, LayoutGrid, LogOut, Nfc, PenSquare, UserCircle, WalletCards } from "lucide-react-native";
 import { TouchableOpacity } from "react-native";
 import { Keyboard } from 'react-native'
+import { v4 as uuidv4 } from 'uuid';
+import { Platform } from 'react-native';
 
 const Login = () => {
   const { mutate, error, isLoading } = api.auth.login.useMutation()
@@ -25,6 +26,13 @@ const Login = () => {
   const [name, setName] = useState<string>()
 
   const login = async (type: 'login' | 'autoLogin') => {
+    const id = await SecureStore.getItemAsync('APP_DEVICE_ID')
+    if (!id) {
+      await SecureStore.setItemAsync('APP_DEVICE_ID', uuidv4())
+    }
+
+    const id2 = await SecureStore.getItemAsync('APP_DEVICE_ID')
+
     const result = await SecureStore.getItemAsync('ACCOUNT_LOGIN');
 
     if (type == 'autoLogin' && !result) return;
@@ -38,8 +46,11 @@ const Login = () => {
     setLoading(true)
 
     mutate({
+      deviceType: Platform.OS,
+      deviceId: id2 ? id2 : 'failure',
       email: emailF,
-      password: passwordF
+      password: passwordF,
+      autoLogin: type == 'autoLogin'
     }, {
       async onSuccess(data) {
         Toast.show({
@@ -117,8 +128,14 @@ const Login = () => {
     })
   }
 
+  const setupDeviceId = async () => {
+    const id = await SecureStore.getItemAsync('APP_DEVICE_ID');
+    if (!id) await SecureStore.setItemAsync('APP_DEVICE_ID', uuidv4())
+  }
+
   useEffect(() => {
     login('autoLogin');
+    setupDeviceId()
   }, [])
 
   return (
@@ -202,6 +219,7 @@ const Login = () => {
 export default function MainPage() {
   const [auth, setAuth] = useAtom(AuthState)
   const router = useRouter()
+  const { mutate: logOut } = api.auth.logOut.useMutation()
 
   if (!auth) return <Login />
 
@@ -222,6 +240,14 @@ export default function MainPage() {
         headerRight() {
           const signOut = async () => {
             await SecureStore.deleteItemAsync('ACCOUNT_LOGIN');
+            const deviceId = await SecureStore.getItemAsync('APP_DEVICE_ID')
+
+            if (!deviceId || !auth) return;
+
+            logOut({
+              accountId: auth.id,
+              deviceId: deviceId
+            })
 
             setAuth(undefined);
           }
@@ -262,6 +288,13 @@ export default function MainPage() {
         <TouchableOpacity className="w-full py-4 border-2 border-gray-200 bg-white rounded-md">
           <BadgePlus color="gray" size={30} className="mx-auto" />
           <Text mt={2} className="text-center text-xs" fontFamily="Inter">Deposit Money to a Wallet</Text>
+        </TouchableOpacity>
+      </Container>
+
+      <Container className="pt-3 flex flex-row gap-1 mx-auto">
+        <TouchableOpacity className="w-full py-4 border-2 border-gray-300 bg-gray-100 rounded-md">
+          <UserCircle color="gray" size={30} className="mx-auto" />
+          <Text mt={2} className="text-center text-xs" fontFamily="Inter">Account Details</Text>
         </TouchableOpacity>
       </Container>
 

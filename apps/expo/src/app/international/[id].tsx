@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable */
 import classNames from "classnames";
 import { Tabs as ExpoTab, useLocalSearchParams, useRouter } from "expo-router";
 import { useAtom, useAtomValue } from "jotai"

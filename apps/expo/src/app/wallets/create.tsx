@@ -1,4 +1,3 @@
-
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useAtom } from 'jotai'
@@ -77,17 +76,7 @@ export default function CreateWallet() {
 
         const presentSheet = await stripe.presentPaymentSheet()
 
-        if (presentSheet.error || initSheet.error) {
-          Toast.show({
-            type: 'error',
-            text1: 'Error',
-            text2: presentSheet.error?.message || initSheet.error?.message
-          })
-        }
-
-        // setTimeout(() => {
-        //   router.push('wallets/all?toRefetch=true')
-        // }, 2000);
+        router.push('wallets/all?toRefetch=true')
       },
       onError(error) {
         Toast.show({
