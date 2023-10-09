@@ -31,7 +31,7 @@ const getBaseUrl = () => {
     Constants.manifest2?.extra?.expoGo?.debuggerHost;
   const localhost = debuggerHost?.split(":")[0];
   if (!localhost) {
-    // return "https://your-production-url.com";
+    return "https://globalfinance.arunnya.com";
     throw new Error(
       "Failed to get localhost. Please point to your production server.",
     );
