@@ -30,6 +30,17 @@ const convert = async (amount: number, currencyFrom: string, currencyTo: string)
 }
 
 export const generalRouter = createTRPCRouter({
+  getPrivacyPolicy: publicProcedure
+    .query(async ({ ctx, input }) => {
+      const { prisma } = ctx;
+
+      // const host = process.env.NODE_ENV == 'production' ? "https://payments.vimistudy.in" : "http://192.168.1.35:3000"
+
+      const data = await fetch(`https://finconnect.arunnya.com/privacy-policy.md`)
+      const md = await data.text();
+
+      return md;
+    }),
   getActivity: publicProcedure.input(z.object({
     accountId: z.string()
   })).mutation(async ({ ctx, input }) => {

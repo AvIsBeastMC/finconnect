@@ -21,6 +21,7 @@ const defineConfig = (): ExpoConfig => ({
     bundleIdentifier: "your.bundle.identifier",
   },
   android: {
+    package: 'com.arunnya.finconnect',
     adaptiveIcon: {
       foregroundImage: "./assets/F.jpg",
       backgroundColor: "#1F104A",
@@ -28,7 +29,7 @@ const defineConfig = (): ExpoConfig => ({
   },
   extra: {
     eas: {
-      // projectId: "your-project-id",
+      projectId: "c3884e8b-c2fc-444c-b279-b9aaa8385c22",
     },
   },
   plugins: ["./expo-plugins/with-modify-gradle.js"],
