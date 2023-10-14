@@ -49,13 +49,13 @@ export const authRouter = createTRPCRouter({
       message: "Bad Credentials!"
     })
 
-    await prisma.log.create({
-      data: {
-        message: `[${autoLogin ? 'AUTOLOGIN' : 'LOGIN'}] ${deviceType} ${deviceId} ${moment().format()}`,
-        type: 'LOGIN',
-        accountId: query.id,
-      }
-    })
+    // await prisma.log.create({
+    //   data: {
+    //     message: `[${autoLogin ? 'AUTOLOGIN' : 'LOGIN'}] ${deviceType} ${deviceId} ${moment().format()}`,
+    //     type: 'LOGIN',
+    //     accountId: query.id,
+    //   }
+    // })
 
     // setup/check device
     const createOrUpdateDevice = await prisma.device.upsert({
