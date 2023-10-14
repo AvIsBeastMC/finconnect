@@ -126,13 +126,13 @@ export const generalRouter = createTRPCRouter({
       }
     });
 
-    const log = await prisma.log.create({
-      data: {
-        message: `[DEFAULT WALLET] ${walletId} ${moment().format()}`,
-        type: 'MISCELLANEOUS',
-        accountId: query.id
-      }
-    })
+    // const log = await prisma.log.create({
+    //   data: {
+    //     message: `[DEFAULT WALLET] ${walletId} ${moment().format()}`,
+    //     type: 'MISCELLANEOUS',
+    //     accountId: query.id
+    //   }
+    // })
 
     return query;
   }),
@@ -258,13 +258,13 @@ export const generalRouter = createTRPCRouter({
       }
     });
 
-    const log = await prisma.log.create({
-      data: {
-        message: `[COMPLETE] ${id} ${moment().format()}`,
-        type: 'INTL-PAYMENT',
-        accountId: senderWallet.id
-      }
-    })
+    // const log = await prisma.log.create({
+    //   data: {
+    //     message: `[COMPLETE] ${id} ${moment().format()}`,
+    //     type: 'INTL-PAYMENT',
+    //     accountId: senderWallet.id
+    //   }
+    // })
 
     const processes = await prisma.$transaction([deduction, increment, transactionCompleted])
 
@@ -316,13 +316,13 @@ export const generalRouter = createTRPCRouter({
       }
     })
 
-    const log = await prisma.log.create({
-      data: {
-        message: `[INITIATE] ${createInternationalPayment.id} ${moment().format()}`,
-        type: 'INTL-PAYMENT',
-        accountId: payerWallet
-      }
-    })
+    // const log = await prisma.log.create({
+    //   data: {
+    //     message: `[INITIATE] ${createInternationalPayment.id} ${moment().format()}`,
+    //     type: 'INTL-PAYMENT',
+    //     accountId: payerWallet
+    //   }
+    // })
 
     return {
       id: createInternationalPayment.id,
@@ -419,15 +419,15 @@ export const generalRouter = createTRPCRouter({
       }
     })
 
-    const log = prisma.log.create({
-      data: {
-        message: `[LOCAL TRANSACTION] ${amount} ${receiverAccount.id} ${moment().format()}`,
-        type: 'LOCAL-PAYMENT',
-        accountId: payerWallet.id
-      }
-    })
+    // const log = prisma.log.create({
+    //   data: {
+    //     message: `[LOCAL TRANSACTION] ${amount} ${receiverAccount.id} ${moment().format()}`,
+    //     type: 'LOCAL-PAYMENT',
+    //     accountId: payerWallet.id
+    //   }
+    // })
 
-    const procedures = await prisma.$transaction([deductAmount, addMoneyToReceiversWallet, createTransaction, log]);
+    const procedures = await prisma.$transaction([deductAmount, addMoneyToReceiversWallet, createTransaction]);
 
     return procedures[1].currency;
   }),
@@ -525,13 +525,13 @@ export const generalRouter = createTRPCRouter({
       confirmation_method: "automatic",
     })
 
-    const log = await prisma.log.create({
-      data: {
-        message: `[NEW WALLET] ${query.id} ${moment().format()}`,
-        type: 'MISCELLANEOUS',
-        accountId: query.id
-      }
-    })
+    // const log = await prisma.log.create({
+    //   data: {
+    //     message: `[NEW WALLET] ${query.id} ${moment().format()}`,
+    //     type: 'MISCELLANEOUS',
+    //     accountId: query.id
+    //   }
+    // })
 
     return paymentIntent.client_secret;
   }),

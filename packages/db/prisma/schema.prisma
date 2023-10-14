@@ -17,7 +17,6 @@ model Account {
   password        String
   currencyWallets CurrencyWallet[]
   defaultWallet   String?
-  logs            Log[]
   devices         Device[]
 }
 
@@ -30,13 +29,13 @@ model Device {
   logoutRequestPassed Boolean @default(false)
 }
 
-model Log {
-  id        String  @id @default(uuid())
-  type      String // 'LOCAL-PAYMENT', 'LOGIN', 'INTL-PAYMENT', 'MISCELLANEOUS
-  message   String
-  account   Account @relation(references: [id], fields: [accountId])
-  accountId String
-}
+// model Log {
+//   id        String  @id @default(uuid())
+//   type      String // 'LOCAL-PAYMENT', 'LOGIN', 'INTL-PAYMENT', 'MISCELLANEOUS
+//   message   String
+//   account   Account @relation(references: [id], fields: [accountId])
+//   accountId String
+// }
 
 model CurrencyWallet {
   id                            String                 @id @default(cuid())
