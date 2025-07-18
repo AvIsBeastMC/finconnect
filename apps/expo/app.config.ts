@@ -6,10 +6,10 @@ const defineConfig = (): ExpoConfig => ({
   scheme: "expo",
   version: "1.0.0",
   orientation: "portrait",
-  icon: "./assets/F.jpg",
+  icon: "./assets/F.png",
   userInterfaceStyle: "light",
   splash: {
-    image: "./assets/F.jpg",
+    image: "./assets/F.png",
     resizeMode: "contain",
   },
   updates: {
@@ -23,7 +23,7 @@ const defineConfig = (): ExpoConfig => ({
   android: {
     package: 'com.arunnya.finconnect',
     adaptiveIcon: {
-      foregroundImage: "./assets/F.jpg",
+      foregroundImage: "./assets/F.png",
       backgroundColor: "#1F104A",
     },
   },
